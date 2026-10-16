@@ -1,6 +1,8 @@
 import './styles.css'
+import './views/views.css'
 import { Camera } from './scene/camera'
 import { mountScene } from './scene/scene'
+import { mountCrate } from './views/crate'
 
 async function start(): Promise<void> {
   const api = window.api
@@ -20,6 +22,13 @@ async function start(): Promise<void> {
     }
   })
   const camera = new Camera((t) => scene.setZoom(t))
+
+  mountCrate(scene.viewHost('crate'), {
+    api,
+    onOpenAlbum: () => {},
+    onAddMusic: () => {},
+    onPlayTrack: () => {}
+  })
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') camera.back()
