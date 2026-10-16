@@ -1,0 +1,25 @@
+appId: com.littlewalken.cityflatfm
+productName: city-flat-fm
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+asarUnpack:
+  - '**/*.node'
+win:
+  target: nsis
+  executableName: city-flat-fm
+  icon: build/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-Setup-${version}.${ext}
+  shortcutName: city-flat-fm
+  createDesktopShortcut: always
+electronDownload:
+  mirror: https://github.com/castlabs/electron-releases/releases/download/
+npmRebuild: false
+publish: null

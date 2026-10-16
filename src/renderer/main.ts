@@ -121,6 +121,9 @@ async function start(): Promise<void> {
   document.addEventListener('click', (e) => {
     if ((e.target as Element).closest('[data-back]')) camera.back()
   })
+  const notice = await api.getStartupNotice()
+  if (notice) showToast(notice, 8000)
+
   // Files dropped anywhere but the import box must not navigate the window away.
   document.addEventListener('dragover', (e) => e.preventDefault())
   document.addEventListener('drop', (e) => e.preventDefault())

@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
-import { launchApp } from './helpers'
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { launchApp, tempDir } from './helpers'
 
 test('opens the apartment window securely', async () => {
   const app = await launchApp()
@@ -38,5 +40,14 @@ test('exposes exactly the typed api on window.api', async () => {
       'getStartupNotice'
     ].sort()
   )
+  await app.close()
+})
+
+test('tells the user when an unreadable library had to be reset', async () => {
+  const profile = tempDir()
+  writeFileSync(join(profile, 'library.db'), Buffer.alloc(4096, 7))
+  const app = await launchApp(profile)
+  const win = await app.firstWindow()
+  await expect(win.locator('.toast')).toContainText('was reset')
   await app.close()
 })

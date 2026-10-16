@@ -2,9 +2,26 @@
 
 [![CI](https://github.com/littlewalken/city-flat-fm/actions/workflows/ci.yml/badge.svg)](https://github.com/littlewalken/city-flat-fm/actions/workflows/ci.yml)
 
-A desktop music player that looks and feels like a cozy city apartment. There's rain on the window, a TV in the corner and a turntable on the shelf. You play your music by interacting with the room.
+A desktop music player that looks and feels like a cozy third-floor city apartment. There are city lights through the window, a TV in the corner, a lamp on the desk and a turntable in front of you. You play your music by interacting with the room.
 
-> **Status:** 🛠️ Planning. The design for Milestone 1 is in progress. No app code yet.
+> **Status:** ✅ Milestone 1 complete. Import your own music and play it in the apartment. Next up: playlists and polish (M2).
+
+![The apartment: a desk with a turntable, TV, lamp and record crate in front of a window overlooking a city street at night](docs/images/apartment.png)
+
+| Flip through your records | Open an album | Drop music into the box |
+|---|---|---|
+| ![Record crate with album sleeves](docs/images/crate.png) | ![Gatefold album view with track list](docs/images/album.png) | ![Shipping-box import screen](docs/images/import.png) |
+
+## Using it
+
+- **Click any object to zoom in.** Press **Esc**, right-click or click **← Back** to zoom out.
+- **Record crate:** your library. Click **＋ Add music** to open the shipping box, then drop in files or folders (MP3, FLAC, WAV, M4A, AAC, OGG) or browse for them. Files stay where they are; nothing is copied.
+- **Albums:** click a sleeve to open it. **▶ Play album** plays it from the top, clicking a track starts from there, and **＋ Queue** adds a song to up next. You can also drag a sleeve onto the turntable drop zone.
+- **Turntable:** play/pause, previous/next, the tonearm seek bar and volume.
+- **TV:** what's playing and what's up next.
+- **Lamp:** click to switch the room between warm lamplight and city glow.
+- **Keys:** **Space** play/pause · **Ctrl+→ / Ctrl+←** next/previous.
+- If you move or delete a song's file, it shows as *missing* in the crate's Songs list, where you can **Locate file…** or remove it. Playback skips it automatically.
 
 ## Why
 
@@ -22,11 +39,32 @@ city-flat-fm brings those files into one place. Later it will also bring in my S
 | **M4: Spotify** | Spotify login (Premium) via the official Web Playback SDK, with Spotify and local tracks mixed in the same playlists |
 | **M5: Wallpaper Mode** | Run the apartment as an interactive live wallpaper behind the Windows desktop icons |
 
-## Tech stack (planned)
+## How it's built
+
+- **Main process** (Node.js): scans folders, reads tags and cover art (`music-metadata`), and stores the library in **SQLite** (`better-sqlite3`) with an automatic backup after each import.
+- **Preload bridge:** the renderer gets exactly one typed object, `window.api`, via `contextBridge`. Context isolation, the sandbox and a strict CSP are on, and Node is never exposed to the UI.
+- **`cfm-media://` protocol:** audio and art are served by **library id, never by path**, so the UI can't read arbitrary files.
+- **Renderer:** plain TypeScript + SVG/CSS (no framework). The room is one SVG built from **slots** (lamp, ceiling) so M3 customization can swap items in. The camera zooms by animating the SVG `viewBox`.
+- **PlayerEngine:** UI-free queue/transport logic behind an `AudioOutput` interface, so it's unit-tested with a fake and M4 can add a Spotify output.
+
+Design docs: [M1 spec](docs/superpowers/specs/2026-10-15-m1-apartment-local-music-design.md) · [M1 implementation plan](docs/superpowers/plans/2026-10-15-m1-apartment-local-music.md)
+
+## Tech stack
 
 - **Electron** ([castLabs build](https://github.com/castlabs/electron-releases) with Widevine, so Spotify's DRM-protected playback works in M4)
 - **TypeScript**
 - A small **C++** native helper for wallpaper mode (M5)
+
+## Install
+
+Build the installer yourself (Windows):
+
+```bash
+npm install
+npm run dist       # creates dist/city-flat-fm-Setup-<version>.exe
+```
+
+Run the setup file, then launch **city-flat-fm** from the Start menu or desktop shortcut. (The installer isn't code-signed yet, so Windows SmartScreen may ask you to confirm.)
 
 ## Development
 
@@ -36,7 +74,7 @@ Requires Windows and Node.js 24+.
 npm install        # also downloads the castLabs Electron build (v44.5.1+wvcus)
 npm run dev        # run the app with hot reload
 npm test           # unit tests (Vitest, run under Electron's Node)
-npm run test:e2e   # end-to-end tests (Playwright driving the real app)
+npm run test:e2e   # end-to-end tests (Playwright driving the real app, with throwaway profiles)
 npm run typecheck && npm run lint
 ```
 
