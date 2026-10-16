@@ -1,5 +1,18 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { openLibrary } from './library/db'
+import { Importer, checkMissing } from './library/importer'
+import { registerIpc } from './ipc'
+import { registerMediaProtocol, registerMediaScheme } from './mediaProtocol'
+
+const NOTICE_RESTORED = "Your library couldn't be read, so it was restored from the last backup."
+const NOTICE_RESET =
+  "Your library couldn't be read and was reset. Your music files are untouched. Re-import them from the crate."
+
+// Lets tests run against a throwaway profile.
+if (process.env['CFM_USER_DATA']) app.setPath('userData', process.env['CFM_USER_DATA'])
+
+registerMediaScheme()
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -34,8 +47,20 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   app.setAppUserModelId('com.littlewalken.cityflatfm')
+  const userData = app.getPath('userData')
+  const { lib, recovered } = openLibrary(join(userData, 'library.db'))
+  await checkMissing(lib)
+  registerMediaProtocol(lib)
+  registerIpc({
+    lib,
+    importer: new Importer(lib, join(userData, 'art')),
+    settingsFile: join(userData, 'settings.json'),
+    startupNotice:
+      recovered === 'backup' ? NOTICE_RESTORED : recovered === 'empty' ? NOTICE_RESET : null
+  })
+  app.on('will-quit', () => lib.close())
   createWindow()
 })
 
