@@ -1,0 +1,228 @@
+:root {
+  --ink: #f6e6cf;
+  --amber: #f0b464;
+  --wood: #7a5034;
+  --night: #2a1a14;
+  --accent: #c8543c;
+  --zoom-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--night);
+  color: var(--ink);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  user-select: none;
+}
+
+#app,
+#stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#room {
+  position: absolute;
+  inset: 0;
+}
+
+#room-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: filter 600ms var(--zoom-ease);
+}
+
+#room[data-zoom] #room-svg {
+  filter: blur(3px) brightness(0.85);
+}
+
+/* Interactive objects */
+.obj {
+  cursor: pointer;
+  transition: filter 150ms;
+}
+.obj:hover {
+  filter: drop-shadow(0 0 6px #ffe0a0) drop-shadow(0 0 2px #ffe0a0);
+}
+
+/* Lamp on/off lighting */
+#night,
+#window-spill,
+#lamp-glow,
+.shade,
+.shade-glow {
+  transition:
+    opacity 500ms ease,
+    fill 500ms ease;
+}
+#night {
+  opacity: 0.06;
+}
+#window-spill {
+  opacity: 0;
+}
+#room-svg[data-lamp='off'] #night {
+  opacity: 0.5;
+}
+#room-svg[data-lamp='off'] #window-spill {
+  opacity: 1;
+}
+#room-svg[data-lamp='off'] #lamp-glow {
+  opacity: 0;
+}
+#room-svg[data-lamp='off'] .shade {
+  fill: #8a6a48;
+}
+#room-svg[data-lamp='off'] .shade-glow {
+  opacity: 0;
+}
+
+/* Turntable */
+.record {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.spinning .record {
+  animation: spin 1.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Street life */
+.walker-a {
+  animation: walk-right 34s linear infinite;
+}
+.walker-b {
+  animation: walk-right 41s linear infinite -14s;
+}
+.walker-c {
+  animation: walk-left 37s linear infinite -6s;
+}
+.walker-d {
+  animation: walk-left 45s linear infinite -20s;
+}
+.car-a {
+  animation: drive-right 13s linear infinite -4s;
+}
+.car-b {
+  animation: drive-left 17s linear infinite -9s;
+}
+@keyframes walk-right {
+  from {
+    transform: translateX(260px);
+  }
+  to {
+    transform: translateX(1340px);
+  }
+}
+@keyframes walk-left {
+  from {
+    transform: translateX(1340px);
+  }
+  to {
+    transform: translateX(260px);
+  }
+}
+@keyframes drive-right {
+  from {
+    transform: translateX(160px);
+  }
+  to {
+    transform: translateX(1340px);
+  }
+}
+@keyframes drive-left {
+  from {
+    transform: translateX(1340px);
+  }
+  to {
+    transform: translateX(160px);
+  }
+}
+.flicker {
+  animation: flicker 9s ease-in-out infinite;
+}
+@keyframes flicker {
+  0%,
+  70%,
+  100% {
+    opacity: 0.85;
+  }
+  75% {
+    opacity: 0.15;
+  }
+  80% {
+    opacity: 0.85;
+  }
+}
+.steam {
+  animation: steam 4s ease-in-out infinite;
+}
+@keyframes steam {
+  50% {
+    transform: translateY(-8px);
+    opacity: 0.4;
+  }
+}
+
+/* Zoomed object views */
+#views {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.view {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 300ms ease 250ms;
+  display: flex;
+  flex-direction: column;
+}
+.view.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.view-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+.back {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--ink);
+  border: 0;
+  border-radius: 16px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.back:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
