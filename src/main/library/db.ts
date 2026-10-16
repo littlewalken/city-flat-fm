@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { copyFileSync, existsSync, rmSync } from 'node:fs'
+import { copyFileSync, existsSync, renameSync } from 'node:fs'
 import { basename } from 'node:path'
 import type { Album, AlbumSort, Track, TrackSort } from '../../shared/types'
 import { colorSeed } from './metadata'
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS artists (
   name TEXT NOT NULL UNIQUE
 );
 CREATE TABLE IF NOT EXISTS albums (
-  id INTEGER PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   album_key TEXT NOT NULL UNIQUE,
   title TEXT NOT NULL,
   artist_id INTEGER NOT NULL REFERENCES artists(id),
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS albums (
   added_at INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS tracks (
-  id INTEGER PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   source TEXT NOT NULL DEFAULT 'local',
   path TEXT NOT NULL UNIQUE,
   title TEXT NOT NULL,
@@ -232,40 +232,53 @@ export class Library {
   }
 }
 
-function tryOpen(file: string): Database.Database | null {
+const CORRUPTION_CODES = new Set(['SQLITE_CORRUPT', 'SQLITE_NOTADB'])
+
+/** Opens and checks a database. Returns null only for real corruption; other errors (busy, locked, permissions) are rethrown. */
+function tryOpen(file: string, busyTimeoutMs: number): Database.Database | null {
   let db: Database.Database | null = null
   try {
-    db = new Database(file)
-    if (db.pragma('integrity_check', { simple: true }) !== 'ok') throw new Error('corrupt')
+    db = new Database(file, { timeout: busyTimeoutMs })
+    if (db.pragma('integrity_check', { simple: true }) !== 'ok') {
+      db.close()
+      return null
+    }
     db.exec(SCHEMA)
     return db
-  } catch {
+  } catch (e) {
     db?.close()
-    return null
+    if (CORRUPTION_CODES.has((e as { code?: string }).code ?? '')) return null
+    throw e
   }
 }
 
-export function openLibrary(file: string): {
+export function openLibrary(
+  file: string,
+  opts: { busyTimeoutMs?: number } = {}
+): {
   lib: Library
   recovered: 'backup' | 'empty' | null
 } {
+  const timeout = opts.busyTimeoutMs ?? 5000
   const fresh = (): Database.Database => {
-    const db = new Database(file)
+    const db = new Database(file, { timeout })
     db.exec(SCHEMA)
     return db
   }
   if (file === ':memory:' || !existsSync(file))
     return { lib: new Library(fresh(), file), recovered: null }
 
-  const db = tryOpen(file)
+  const db = tryOpen(file, timeout)
   if (db) return { lib: new Library(db, file), recovered: null }
 
+  // Keep the unreadable file for inspection instead of deleting it.
+  renameSync(file, `${file}.corrupt-${Date.now()}`)
   const bak = `${file}.bak`
   if (existsSync(bak)) {
     copyFileSync(bak, file)
-    const restored = tryOpen(file)
+    const restored = tryOpen(file, timeout)
     if (restored) return { lib: new Library(restored, file), recovered: 'backup' }
+    renameSync(file, `${file}.corrupt-${Date.now()}-bak`)
   }
-  rmSync(file, { force: true })
   return { lib: new Library(fresh(), file), recovered: 'empty' }
 }

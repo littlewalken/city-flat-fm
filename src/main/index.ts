@@ -14,6 +14,20 @@ if (process.env['CFM_USER_DATA']) app.setPath('userData', process.env['CFM_USER_
 
 registerMediaScheme()
 
+// One copy at a time: a second launch focuses the existing window instead of
+// opening the same library database twice.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    }
+  })
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     title: 'city-flat-fm',

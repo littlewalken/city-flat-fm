@@ -5,7 +5,7 @@ import { escapeHtml, sleeveColors } from './sleeve'
 
 export function mountAlbum(
   host: HTMLElement,
-  deps: { api: CityFlatApi; engine: PlayerEngine }
+  deps: { api: CityFlatApi; engine: PlayerEngine; onLibraryChanged(): void }
 ): { open(albumId: number): Promise<void>; close(): void; isOpen(): boolean } {
   const overlay = document.createElement('div')
   overlay.className = 'overlay album-overlay'
@@ -55,6 +55,14 @@ export function mountAlbum(
                   <span class="t">${escapeHtml(t.title)}</span>
                   <button class="act" data-action="queue" title="Add to up next">＋ Queue</button>
                   <span class="d">${t.missing ? 'missing' : formatDuration(t.durationMs)}</span>
+                  ${
+                    t.missing
+                      ? `<span class="missing-actions">
+                          <button data-action="locate">Locate file…</button>
+                          <button data-action="remove">Remove from library</button>
+                        </span>`
+                      : ''
+                  }
                 </li>`
               )
               .join('')}
@@ -64,12 +72,34 @@ export function mountAlbum(
     markPlaying()
   }
 
-  overlay.addEventListener('click', (e) => {
+  async function refresh(): Promise<void> {
+    deps.onLibraryChanged()
+    if (!album) return
+    try {
+      ;({ album, tracks } = await deps.api.getAlbum(album.id))
+      render()
+    } catch {
+      handle.close() // the album's last track was removed
+    }
+  }
+
+  overlay.addEventListener('click', async (e) => {
     const target = e.target as Element
     if (target.closest('[data-close-album]')) return handle.close()
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action
     const li = target.closest<HTMLElement>('.track')
     if (!album) return
+    const track = li ? tracks[Number(li.dataset.index)] : undefined
+    // Missing files: offer Locate/Remove instead of trying to play them.
+    if (track?.missing) {
+      if (action === 'locate') {
+        if (await deps.api.locateFile(track.id)) await refresh()
+      } else if (action === 'remove') {
+        await deps.api.removeTrack(track.id)
+        await refresh()
+      } else li!.classList.toggle('open')
+      return
+    }
     if (action === 'play-album') deps.engine.playTracks(tracks, 0, false, album.id)
     else if (action === 'shuffle') {
       const start = Math.floor(Math.random() * tracks.length)

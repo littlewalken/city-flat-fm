@@ -43,7 +43,7 @@ async function start(): Promise<void> {
     onPlayTrack: (t) => engine.playTracks([t]),
     onPlayAlbum: (id) => playAlbum(api, engine, id)
   })
-  const album = mountAlbum(crateHost, { api, engine })
+  const album = mountAlbum(crateHost, { api, engine, onLibraryChanged: () => crate.reload() })
   const importBox = mountImportBox(crateHost, { api, onDone: (ids) => crate.reload(ids) })
 
   mountTurntable(scene.viewHost('turntable'), engine, out, (volume) => api.setSettings({ volume }))
@@ -76,8 +76,11 @@ async function start(): Promise<void> {
   // (and is about to be flagged missing) must not overwrite the last good one.
   function savePosition(): void {
     const { current } = engine.snapshot()
-    if (current && !current.missing && out.positionMs() > 0) {
-      api.setSettings({ lastTrackId: current.id, lastPositionMs: out.positionMs() })
+    const pos = out.positionMs()
+    if (current && !current.missing && pos > 0) {
+      // A finished track comes back from the start rather than at its very end.
+      const finished = out.durationMs() > 0 && pos >= out.durationMs() - 1000
+      api.setSettings({ lastTrackId: current.id, lastPositionMs: finished ? 0 : pos })
     }
   }
   engine.subscribe((s) => {
@@ -99,8 +102,9 @@ async function start(): Promise<void> {
     else camera.back()
   }
 
+  // Text fields keep Space for typing; sliders and buttons don't need it.
   const typing = (e: KeyboardEvent): boolean =>
-    e.target instanceof HTMLInputElement ||
+    (e.target instanceof HTMLInputElement && e.target.type !== 'range') ||
     e.target instanceof HTMLSelectElement ||
     e.target instanceof HTMLTextAreaElement
   document.addEventListener('keydown', (e) => {

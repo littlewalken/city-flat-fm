@@ -85,7 +85,14 @@ export function mountImportBox(
   async function importPaths(paths: string[]): Promise<void> {
     if (paths.length === 0) return
     status.textContent = 'Opening the box…'
-    await deps.api.importPaths(paths)
+    try {
+      const summary = await deps.api.importPaths(paths)
+      if (summary.added + summary.duplicates + summary.skipped === 0) {
+        status.textContent = 'No audio files found.'
+      }
+    } catch {
+      status.textContent = 'Something went wrong while unpacking. Please try again.'
+    }
   }
 
   drop.addEventListener('dragover', (e) => {

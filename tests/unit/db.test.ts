@@ -1,4 +1,5 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import Database from 'better-sqlite3'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, test } from 'vitest'
@@ -95,5 +96,40 @@ describe('library db', () => {
     expect(recovered).toBe('empty')
     expect(lib.allTracks()).toHaveLength(0)
     lib.close()
+  })
+
+  test('ids are never reused after a delete', () => {
+    const lib = mem()
+    const first = lib.upsertTrack(nt({ path: 'C:/m/1.mp3', albumTitle: 'A' })).track
+    lib.removeTrack(first.id)
+    const second = lib.upsertTrack(nt({ path: 'C:/m/2.mp3', albumTitle: 'B' })).track
+    expect(second.id).not.toBe(first.id)
+    expect(second.albumId).not.toBe(first.albumId)
+  })
+
+  test('a locked database is not mistaken for a corrupt one', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cfm-db-'))
+    const file = join(dir, 'library.db')
+    const first = openLibrary(file).lib
+    first.upsertTrack(nt({}))
+    first.close()
+    writeFileSync(file + '.bak', Buffer.alloc(4096, 7))
+    const before = readFileSync(file)
+    const holder = new Database(file)
+    holder.exec('BEGIN EXCLUSIVE')
+    expect(() => openLibrary(file, { busyTimeoutMs: 50 })).toThrow()
+    holder.exec('ROLLBACK')
+    holder.close()
+    expect(readFileSync(file).equals(before)).toBe(true)
+  })
+
+  test('an unrecoverable database is moved aside, not deleted', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cfm-db-'))
+    const file = join(dir, 'library.db')
+    writeFileSync(file, Buffer.alloc(4096, 7))
+    const { lib, recovered } = openLibrary(file)
+    expect(recovered).toBe('empty')
+    lib.close()
+    expect(readdirSync(dir).some((f) => f.startsWith('library.db.corrupt-'))).toBe(true)
   })
 })
