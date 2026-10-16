@@ -59,8 +59,9 @@ export function mountCrate(
     onOpenAlbum(id: number): void
     onAddMusic(): void
     onPlayTrack(t: Track): void
+    onPlayAlbum(id: number): void
   }
-): { reload(): Promise<void> } {
+): { reload(highlight?: number[]): Promise<void> } {
   host.innerHTML = `
     <div class="crate" data-mode="albums">
       <div class="crate-toolbar">
@@ -82,6 +83,9 @@ export function mountCrate(
         <span class="crate-footer"></span>
       </div>
       <div class="crate-info"></div>
+      <div class="turntable-drop" data-drop="turntable">
+        <span class="mini-record"></span>Drop here to play on the turntable
+      </div>
     </div>`
 
   const root = host.querySelector<HTMLElement>('.crate')!
@@ -111,7 +115,7 @@ export function mountCrate(
       <span class="info-hint">Click to open · drag to the turntable</span>`
   }
 
-  async function reload(): Promise<void> {
+  async function reload(highlight: number[] = []): Promise<void> {
     ;[albums, tracks] = await Promise.all([
       deps.api.listAlbums(sort),
       deps.api.listTracks(TRACK_SORT_FOR[sort])
@@ -124,6 +128,9 @@ export function mountCrate(
       : '<li class="empty">No songs yet. Use ＋ Add music.</li>'
     footer.textContent = countLabel(tracks.length, albums.length)
     info.innerHTML = albums.length ? '' : '<span>Your crate is empty. Add some music!</span>'
+    for (const id of highlight) {
+      sleevesEl.querySelector(`.sleeve[data-album-id="${id}"]`)?.classList.add('new')
+    }
     setFocus(Math.min(focus, albums.length - 1))
   }
 
@@ -163,7 +170,24 @@ export function mountCrate(
     if (sleeve && e.dataTransfer) {
       e.dataTransfer.setData(ALBUM_DRAG_TYPE, sleeve.dataset.albumId!)
       e.dataTransfer.effectAllowed = 'copy'
+      root.classList.add('dragging')
     }
+  })
+  sleevesEl.addEventListener('dragend', () => root.classList.remove('dragging'))
+  const dropZone = root.querySelector<HTMLElement>('[data-drop="turntable"]')!
+  dropZone.addEventListener('dragover', (e) => {
+    if (e.dataTransfer?.types.includes(ALBUM_DRAG_TYPE)) {
+      e.preventDefault()
+      dropZone.classList.add('over')
+    }
+  })
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'))
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault()
+    dropZone.classList.remove('over')
+    root.classList.remove('dragging')
+    const id = Number(e.dataTransfer?.getData(ALBUM_DRAG_TYPE))
+    if (id) deps.onPlayAlbum(id)
   })
   document.addEventListener('keydown', (e) => {
     if (!isActive() || root.dataset.mode !== 'albums' || e.ctrlKey) return

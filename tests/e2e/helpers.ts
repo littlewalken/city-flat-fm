@@ -12,3 +12,10 @@ export function launchApp(userData = tempDir()): Promise<ElectronApplication> {
     env: { ...process.env, CFM_USER_DATA: userData }
   })
 }
+
+import type { CityFlatApi } from '../../src/shared/types'
+declare global {
+  interface Window {
+    api: CityFlatApi
+  }
+}

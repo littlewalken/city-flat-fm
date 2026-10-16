@@ -3,13 +3,6 @@ import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { makeWav } from '../fixtures/makeWav'
 import { launchApp, tempDir } from './helpers'
-import type { CityFlatApi } from '../../src/shared/types'
-
-declare global {
-  interface Window {
-    api: CityFlatApi
-  }
-}
 
 test('crate shows albums, songs and missing-file actions', async () => {
   const music = tempDir()
