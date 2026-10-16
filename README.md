@@ -14,16 +14,17 @@ city-flat-fm brings those files into one place. Later it will also bring in my S
 
 | Milestone | Scope |
 |---|---|
-| **M1: The Apartment + Local Music** | The apartment scene, importing local audio files (MP3/FLAC/WAV/M4A), browsing them as records in a crate, playing them on the turntable, and basic playback controls and queue |
+| **M1: The Apartment + Local Music** | The apartment scene with click-to-zoom objects, a shipping-box import screen for local files (MP3/FLAC/WAV/M4A/OGG), a record crate to browse albums, gatefold album view, turntable playback and a queue on the TV ([design spec](docs/superpowers/specs/2026-10-15-m1-apartment-local-music-design.md)) |
 | **M2: Playlists + Polish** | Playlists, search via the TV, shuffle/repeat, ambient rain and city sounds, a day/night cycle |
-| **M3: Spotify** | Spotify login (Premium) via the official Web Playback SDK, with Spotify and local tracks mixed in the same playlists |
-| **M4: Wallpaper Mode** | Run the apartment as an interactive live wallpaper behind the Windows desktop icons |
+| **M3: Room Customization** | Edit-room mode: swap the table lamp for a lava lamp, add LED ceiling strips, and more |
+| **M4: Spotify** | Spotify login (Premium) via the official Web Playback SDK, with Spotify and local tracks mixed in the same playlists |
+| **M5: Wallpaper Mode** | Run the apartment as an interactive live wallpaper behind the Windows desktop icons |
 
 ## Tech stack (planned)
 
-- **Electron** ([castLabs build](https://github.com/castlabs/electron-releases) with Widevine, so Spotify's DRM-protected playback works in M3)
+- **Electron** ([castLabs build](https://github.com/castlabs/electron-releases) with Widevine, so Spotify's DRM-protected playback works in M4)
 - **TypeScript**
-- A small **C++** native helper for wallpaper mode (M4)
+- A small **C++** native helper for wallpaper mode (M5)
 
 ## Legal note
 
