@@ -1,5 +1,7 @@
 # city-flat-fm
 
+[![CI](https://github.com/littlewalken/city-flat-fm/actions/workflows/ci.yml/badge.svg)](https://github.com/littlewalken/city-flat-fm/actions/workflows/ci.yml)
+
 A desktop music player that looks and feels like a cozy city apartment. There's rain on the window, a TV in the corner and a turntable on the shelf. You play your music by interacting with the room.
 
 > **Status:** 🛠️ Planning. The design for Milestone 1 is in progress. No app code yet.
@@ -25,6 +27,18 @@ city-flat-fm brings those files into one place. Later it will also bring in my S
 - **Electron** ([castLabs build](https://github.com/castlabs/electron-releases) with Widevine, so Spotify's DRM-protected playback works in M4)
 - **TypeScript**
 - A small **C++** native helper for wallpaper mode (M5)
+
+## Development
+
+Requires Windows and Node.js 24+.
+
+```bash
+npm install        # also downloads the castLabs Electron build (v44.5.1+wvcus)
+npm run dev        # run the app with hot reload
+npm test           # unit tests (Vitest, run under Electron's Node)
+npm run test:e2e   # end-to-end tests (Playwright driving the real app)
+npm run typecheck && npm run lint
+```
 
 ## Legal note
 

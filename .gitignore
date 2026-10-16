@@ -1,10 +1,12 @@
 node_modules/
 dist/
 out/
-build/
 *.log
 .env
 .env.*
 .DS_Store
 Thumbs.db
 .superpowers/
+.eslintcache
+test-results/
+playwright-report/
