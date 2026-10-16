@@ -134,6 +134,7 @@ export const ROOM_SVG = `
 
   <g data-slot="lamp" data-on="true">
     <g data-object="lamp" class="obj" role="button" aria-label="Lamp">
+      <rect class="hit" x="100" y="350" width="180" height="310" fill="transparent"/>
       <ellipse cx="190" cy="648" rx="60" ry="12" fill="#4a3020"/>
       <rect x="182" y="480" width="16" height="168" fill="#b08850"/>
       <polygon class="shade" points="100,480 280,480 244,350 136,350" fill="#f0b464"/>

@@ -37,3 +37,13 @@ test('clicking an object zooms in; Escape, Back and right-click zoom out', async
   await expect(room).not.toHaveAttribute('data-zoom')
   await app.close()
 })
+
+test('the lamp is clickable when a small window crops the room', async () => {
+  const app = await launchApp()
+  const win = await app.firstWindow()
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1008, 690))
+  await expect.poll(() => win.evaluate(() => window.innerWidth)).toBe(1008)
+  await win.locator('[data-object="lamp"]').click({ timeout: 3000 })
+  await expect(win.locator('[data-slot="lamp"]')).toHaveAttribute('data-on', 'false')
+  await app.close()
+})
